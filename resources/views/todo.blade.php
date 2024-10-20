@@ -3,14 +3,39 @@
 
 
 @if (session('success'))
-<div class="alert alert-success" style="position: fixed;
-    top: 0;
-    left: 0;
-    width: 20%;">
-    <strong>Berhasi!</strong> Data kamu telah ditambahkan.
+<div id="successMessage" class="z-40 py-5 px-8 text-md bg-green-600 text-white fixed m-4 rounded-full transition-transform duration-500 transform -translate-x-full opacity-100">
+    <strong>Berhasil!</strong> Semangat terus nugasnya!😊
     <p>{{ session('success') }}</p>
 </div>
+
+<script>
+    // Function to animate the message
+    function showMessage() {
+        const message = document.getElementById('successMessage');
+        if (message) {
+            // Slide in
+            message.classList.remove('-translate-x-full');
+            message.classList.add('translate-x-0');
+
+            // Set timeout for the slide out
+            setTimeout(() => {
+                // Slide out
+                message.classList.remove('translate-x-0');
+                message.classList.add('-translate-x-full');
+
+                // Remove the element from DOM after fade out
+                setTimeout(() => {
+                    message.remove();
+                }, 200); // Match this timeout with the slide-out duration
+            }, 1000); // Time to stay before sliding out
+        }
+    }
+
+    // Show message on load
+    window.onload = showMessage;
+</script>
 @endif
+
 
 @if ($errors->any())
 <div class="alert alert-success style='position: fixed;
@@ -51,18 +76,35 @@
                 <span>Add new task</span>
             </button>
         </div>
+        <div class="flex gap-4">
+            <button id="openSortModalBtn" class="border-2 gap-2 w-fit px-4 py-2 rounded-full text-blue-500 font-medium flex items-center">
+                <!-- Sort Icon -->
+                <img src="{{ asset('images/filter.svg') }}" alt="Sort Options" class="w-6 filter text-blue-500" style="filter: invert(43%) sepia(83%) saturate(2656%) hue-rotate(207deg) brightness(94%) contrast(100%);" />
+                <span>Filter</span>
+            </button>
+
+            <button id="openSortModalBtn" class="border-2 gap-2 w-fit px-4 py-2 rounded-full text-blue-500 font-medium flex items-center">
+                <!-- Sort Icon -->
+                <img src="{{ asset('images/sort.svg') }}" alt="Sort Options" class="w-6 filter text-blue-500" style="filter: invert(43%) sepia(83%) saturate(2656%) hue-rotate(207deg) brightness(94%) contrast(100%);" />
+                <span>Sort</span>
+            </button>
+
+        </div>
 
         <ul class="list-group w-full flex flex-col justify-center items-center gap-6 pt-1 pb-8">
-            @foreach ($todos as $todo)
+            @foreach ($pinnedTodos as $todo)
             <li class="p-6 shadow-md w-full rounded-xl border-l-8 bg-white border-blue-500 flex flex-col gap-6 ">
                 <div class="flex gap-3 items-center">
                     <div class="font-semibold flex items-start justify-start text-slate-500">
                         <img src="{{ asset('images/pinned.png') }}" alt="Options" class="w-full ">
                         Pinned
                     </div>
-                    <div class=" text-green-500 font-semibold">
+                    @if ($todo->is_done)
+                    <div class="text-green-500 font-semibold">
                         Done
                     </div>
+                    @else
+                    @endif
                 </div>
                 <div class="flex flex-col gap-1">
                     <div class="flex justify-between w-full relative">
@@ -78,7 +120,17 @@
                                     onclick="openEditModal('{{ $todo->id }}')">
                                     Edit
                                 </a>
-                                <a href="{{ url('todo/' . $todo->id . '/pin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Pin</a> <!-- Pin Option -->
+                                @if ($todo->is_pinned)
+                                <form action="{{ route('todo.unpin', $todo->id) }}" method="POST" class="">
+                                    @csrf
+                                    <button type="submit" class="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Unpin</button>
+                                </form>
+                                @else
+                                <form action="{{ route('todo.pin', $todo->id) }}" method="POST" class="">
+                                    @csrf
+                                    <button type="submit" class="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pin</button>
+                                </form>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -90,9 +142,15 @@
                     <p class="mt-2">{{ $todo->sinopsis }}</p>
                 </div>
                 <div class="flex gap-3">
-                    <button class="bg-blue-400 w-fit px-8 py-3 rounded-full text-white font-medium">
-                        <a href="" class="">Mark As Done</a>
-                    </button>
+                    @if ($todo->is_done)
+                    @else
+                    <form action="{{ route('todo.done', $todo->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="bg-blue-400 w-fit px-8 py-3 rounded-full text-white font-medium">
+                            Mark As Done
+                        </button>
+                    </form>
+                    @endif
                     <div class="border-2 border-slate-400 w-fit px-8 py-3 rounded-full text-blue-400 font-medium">
                         <form action="{{ url('todo', $todo->id) }}" method="POST">
                             @csrf
@@ -160,9 +218,132 @@
                     </div>
                     <img src="{{ asset('images/double-star.png') }}" alt="Logo" class="w-1/3 absolute bottom-4 z-40" />
                 </div>
-
             </div>
+            @endforeach
 
+            @foreach ($regularTodos as $todo)
+            <li class="p-6 shadow-md w-full rounded-xl border-l-8 bg-white border-blue-500 flex flex-col gap-6 ">
+                <div class="flex gap-3 items-center">
+                    @if ($todo->is_done)
+                    <div class="text-green-500 font-semibold">
+                        Done
+                    </div>
+                    @else
+                    @endif
+                </div>
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between w-full relative">
+                        <p class="font-semibold text-3xl">{{ $todo->task }}</p>
+                        <button id="dropdownButton-{{ $todo->id }}" class="w-fit p-2 rounded-full text-white font-medium flex items-center gap-2">
+                            <img src="{{ asset('images/option.png') }}" alt="Options" class="w-full">
+                        </button>
+                        <div id="dropdownMenu-{{ $todo->id }}" class="hidden absolute right-6 z-10 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                            <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="dropdownButton-{{ $todo->id }}">
+                                <a href="javascript:void(0);"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    role="menuitem"
+                                    onclick="openEditModal('{{ $todo->id }}')">
+                                    Edit
+                                </a>
+                                @if ($todo->is_pinned)
+                                <form action="{{ route('todo.unpin', $todo->id) }}" method="POST" class="">
+                                    @csrf
+                                    <button type="submit" class="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Unpin</button>
+                                </form>
+                                @else
+                                <form action="{{ route('todo.pin', $todo->id) }}" method="POST" class="">
+                                    @csrf
+                                    <button type="submit" class="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pin</button>
+                                </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 font-medium text-slate-600">
+                        <p>{{ $todo->author }}</p>
+                        <span class="w-1 h-1 rounded-full bg-slate-400"></span>
+                        <p>{{ $todo->penerbit }}</p>
+                    </div>
+                    <p class="mt-2">{{ $todo->sinopsis }}</p>
+                </div>
+                <div class="flex gap-3">
+                    @if ($todo->is_done)
+                    @else
+                    <form action="{{ route('todo.done', $todo->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="bg-blue-400 w-fit px-8 py-3 rounded-full text-white font-medium">
+                            Mark As Done
+                        </button>
+                    </form>
+                    @endif
+                    <div class="border-2 border-slate-400 w-fit px-8 py-3 rounded-full text-blue-400 font-medium">
+                        <form action="{{ url('todo', $todo->id) }}" method="POST">
+                            @csrf
+                            @method("DELETE")
+                            <button class="btn btn-danger">Delete Task</button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            <!-- Modal Structure for Edit Task -->
+            <div id="editTaskModal-{{ $todo->id }}" class="w-full hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50" aria-hidden="true">
+                <!-- Modal content for editing -->
+                <div class="bg-white rounded-xl w-3/4 px-12 py-8 relative">
+                    <div class="w-full flex justify-end mb-6">
+                        <!-- Button to close the modal -->
+                        <button class="closeEditModalBtn text-gray-500 hover:text-gray-700" aria-label="Close Modal" data-id="{{ $todo->id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="w-full justify-between flex">
+                        <div class="flex flex-col gap-2">
+                            <h2 class="text-4xl font-bold">Edit Task?</h2>
+                            <p class="text-xl mb-4">Update the task details below.</p>
+                        </div>
+
+                        <!-- Form for editing task -->
+                        <form action="{{ url('todo/' . $todo->id) }}" method="POST" class="flex w-1/2 flex-col gap-4">
+                            @csrf
+                            @method('PUT')
+                            <input
+                                type="text"
+                                name="task"
+                                class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                placeholder="Your Task"
+                                value="{{ $todo->task }}"
+                                required>
+                            <input
+                                type="text"
+                                name="author"
+                                class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                placeholder="Subject or Topic"
+                                value="{{ $todo->author }}"
+                                required>
+                            <input
+                                type="text"
+                                name="penerbit"
+                                class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                value="{{ $todo->penerbit }}"
+                                required>
+                            <textarea
+                                name="sinopsis"
+                                class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                placeholder="Fill the description"
+                                required>{{ $todo->sinopsis }}</textarea>
+
+                            <!-- Submit and Back buttons -->
+                            <div class="flex gap-2">
+                                <button class="bg-blue-400 w-fit px-12 py-3 rounded-full text-white font-medium" type="submit">Update</button>
+                                <button type="button" class="closeEditModalBtnBottom border-2 border-slate-400 w-fit px-8 py-3 rounded-full text-blue-400 font-medium" data-id="{{ $todo->id }}">Back</button>
+                            </div>
+                        </form>
+                    </div>
+                    <img src="{{ asset('images/double-star.png') }}" alt="Logo" class="w-1/3 absolute bottom-4 z-40" />
+                </div>
+            </div>
             @endforeach
         </ul>
     </div>
@@ -185,10 +366,8 @@
                 </div>
 
 
-                <!-- The form inside the modal -->
                 <form action="{{ url('todo') }}" method="POST" class="flex w-1/2 flex-col gap-4">
                     @csrf
-                    <!-- Task input -->
                     <input
                         type="text"
                         name="task"
@@ -196,7 +375,6 @@
                         placeholder="Your Task"
                         required>
 
-                    <!-- Subject or Topic input -->
                     <input
                         type="text"
                         name="author"
@@ -204,7 +382,6 @@
                         placeholder="Subject or Topic"
                         required>
 
-                    <!-- Due Date input -->
                     <input
                         type="text"
                         placeholder="Deadline Task"
@@ -212,14 +389,12 @@
                         class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         required>
 
-                    <!-- Description input (textarea) -->
                     <textarea
                         name="sinopsis"
                         class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         placeholder="Fill the description"
                         required></textarea>
 
-                    <!-- Submit and Back buttons -->
                     <div class="flex gap-2">
                         <button class="bg-blue-400 w-fit px-12 py-3 rounded-full text-white font-medium" type="submit">Create</button>
                         <button type="button" id="closeModalBtnBottom" class="border-2 border-slate-400 w-fit px-8 py-3 rounded-full text-blue-400 font-medium">Back</button>
@@ -233,21 +408,17 @@
 
 
 
-    <!-- JavaScript to toggle the modal -->
     <script>
-        // Get the modal, buttons, and close functionality
         const modal = document.getElementById('taskModal');
         const openModalBtn = document.getElementById('openModalBtn');
         const closeModalBtns = document.querySelectorAll('#closeModalBtn, #closeModalBtnBottom');
 
-        // Function to show the modal
         openModalBtn.addEventListener('click', () => {
             modal.classList.remove('hidden');
             modal.setAttribute('aria-hidden', 'false');
             openModalBtn.setAttribute('aria-expanded', 'true');
         });
 
-        // Function to hide the modal
         closeModalBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 modal.classList.add('hidden');
@@ -256,26 +427,21 @@
             });
         });
 
-        // Dropdown functionality
         document.querySelectorAll('[id^="dropdownButton-"]').forEach(button => {
             button.addEventListener('click', function(event) {
                 const dropdownMenu = document.getElementById('dropdownMenu-' + this.id.split('-')[1]);
                 dropdownMenu.classList.toggle('hidden');
-                // Menghentikan event bubbling agar klik pada dropdown tidak menutupnya
+
                 event.stopPropagation();
             });
         });
 
-        // Close dropdown when clicking outside
         window.addEventListener('click', function(event) {
-            // Sembunyikan semua dropdown menu yang terlihat
             document.querySelectorAll('[id^="dropdownMenu-"]:not(.hidden)').forEach(menu => {
                 menu.classList.add('hidden');
             });
         });
 
-        // Function to open the specific modal for each task
-        // Event listener untuk membuka modal edit berdasarkan ID task yang di-klik
         function openEditModal(taskId) {
             console.log("Opening modal for taskId:", taskId);
             const editModal = document.getElementById('editTaskModal-' + taskId);
@@ -289,7 +455,6 @@
 
 
 
-        // Event listener untuk menutup modal edit
         document.querySelectorAll('.closeEditModalBtn, .closeEditModalBtnBottom').forEach(button => {
             button.addEventListener('click', function(event) {
                 const taskId = this.getAttribute('data-id');
@@ -303,38 +468,6 @@
     <img src="{{ asset('images/bintang.png') }}" alt="Logo" class="w-1/6 absolute -right-28 top-11 -z-30 -rotate-180" />
 </section>
 
-<!-- <div>
-<div class="card">
-    <div class="card-header" style="background-color: #C8C6C6; font-family:Arial;">Daftar Buku</div>
-    <div class="card-body">
-        <a href="{{ url('/todo/create') }}" class="btn btn-success btn-sm" title="Add New Contact" style="margin-bottom: 10px;">
-            <i class="fa fa-plus" aria-hidden="true"></i> Tambah
-        </a>
-
-        <ul class="list-group">
-            @foreach ($todos as $todo)
-            <li class="list-group-item" style="margin-bottom: 20px; border:2px solid black; border-radius:10px;">
-                <p style="text-align:center; font-size:20px; font-family:arial; font-weight:5px;">{{ $todo->task }}</p>
-                <div class="row">
-                    <div class="col">
-                        <a href="{{ url('/todo/' . $todo->id) }}" class="btn btn-info">Detail</a>
-                    </div>
-                    <div class="col">
-                        <a href="todo/{{ $todo->id }}/edit" class="btn btn-warning">Ubah</a>
-                    </div>
-                    <div class="col">
-                        <form action="{{ url('todo',$todo->id) }}" method="POST">
-                            @csrf
-                            @method("Delete")
-                            <button class="btn btn-danger">Hapus</button>
-                        </form>
-                    </div>
-                </div>
-            </li>
-            @endforeach
-        </ul>
-    </div>
-</div> -->
 </div>
 
 

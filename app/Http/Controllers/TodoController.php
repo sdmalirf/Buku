@@ -15,7 +15,12 @@ class TodoController extends Controller
     public function index()
     {
         $todos = Todo::all();
-        return view("todo", ["todos" => $todos]);
+
+        $pinnedTodos = $todos->where('is_pinned', true);
+        $regularTodos = $todos->where('is_pinned', false);
+
+        // Kembalikan view dengan data yang sudah dipisah
+        return view("todo", compact('pinnedTodos', 'regularTodos', 'todos'));
     }
 
     /**
@@ -105,5 +110,38 @@ class TodoController extends Controller
         $todo->delete();
 
         return back()->with('success', ' ');
+    }
+
+    public function pin($id)
+    {
+        $todo = Todo::find($id);
+        if ($todo) {
+            $todo->is_pinned = true; // Set is_pinned ke true
+            $todo->save();
+        }
+
+        return redirect()->back()->with('success', 'Task pinned successfully!');
+    }
+
+    public function unpin($id)
+    {
+        $todo = Todo::find($id);
+        if ($todo) {
+            $todo->is_pinned = false; // Set is_pinned ke false
+            $todo->save();
+        }
+
+        return redirect()->back()->with('success', 'Task unpinned successfully!');
+    }
+
+    public function markAsDone($id)
+    {
+        $todo = Todo::find($id);
+        if ($todo) {
+            $todo->is_done = true; // Set is_done ke true
+            $todo->save();
+        }
+
+        return redirect()->back()->with('success', 'Task marked as done successfully!');
     }
 }
