@@ -30,11 +30,11 @@
 
 
 
-<section class="w-full h-full overflow-hidden relative">
+<section class="w-full h-full overflow-x-hidden relative">
     <div class="w-2/3 mx-auto flex flex-col gap-6 mt-12">
         <span class="flex flex-col gap-2">
             <h1 class="font-bold text-5xl">To Do List</h1>
-            <p class="text-lg font-medium text-gray-500">You have {{ count($todos) }} task{{ count($todos) === 1 ? '' : 's' }} to do</p>
+            <p class="text-xl font-normal text-gray-500">You have {{ count($todos) }} task{{ count($todos) === 1 ? '' : 's' }} to do</p>
 
         </span>
         <div class="flex w-full justify-between items-center">
@@ -55,6 +55,15 @@
         <ul class="list-group w-full flex flex-col justify-center items-center gap-6 pt-1 pb-8">
             @foreach ($todos as $todo)
             <li class="p-6 shadow-md w-full rounded-xl border-l-8 bg-white border-blue-500 flex flex-col gap-6 ">
+                <div class="flex gap-3 items-center">
+                    <div class="font-semibold flex items-start justify-start text-slate-500">
+                        <img src="{{ asset('images/pinned.png') }}" alt="Options" class="w-full ">
+                        Pinned
+                    </div>
+                    <div class=" text-green-500 font-semibold">
+                        Done
+                    </div>
+                </div>
                 <div class="flex flex-col gap-1">
                     <div class="flex justify-between w-full relative">
                         <p class="font-semibold text-3xl">{{ $todo->task }}</p>
@@ -63,7 +72,12 @@
                         </button>
                         <div id="dropdownMenu-{{ $todo->id }}" class="hidden absolute right-6 z-10 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                             <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="dropdownButton-{{ $todo->id }}">
-                                <a href="{{ url('todo/' . $todo->id . '/edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Edit</a>
+                                <a href="javascript:void(0);"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    role="menuitem"
+                                    onclick="openEditModal('{{ $todo->id }}')">
+                                    Edit
+                                </a>
                                 <a href="{{ url('todo/' . $todo->id . '/pin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Pin</a> <!-- Pin Option -->
                             </div>
                         </div>
@@ -88,6 +102,67 @@
                     </div>
                 </div>
             </li>
+            <!-- Modal Structure for Edit Task -->
+            <div id="editTaskModal-{{ $todo->id }}" class="w-full hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50" aria-hidden="true">
+                <!-- Modal content for editing -->
+                <div class="bg-white rounded-xl w-3/4 px-12 py-8 relative">
+                    <div class="w-full flex justify-end mb-6">
+                        <!-- Button to close the modal -->
+                        <button class="closeEditModalBtn text-gray-500 hover:text-gray-700" aria-label="Close Modal" data-id="{{ $todo->id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="w-full justify-between flex">
+                        <div class="flex flex-col gap-2">
+                            <h2 class="text-4xl font-bold">Edit Task?</h2>
+                            <p class="text-xl mb-4">Update the task details below.</p>
+                        </div>
+
+                        <!-- Form for editing task -->
+                        <form action="{{ url('todo/' . $todo->id) }}" method="POST" class="flex w-1/2 flex-col gap-4">
+                            @csrf
+                            @method('PUT')
+                            <input
+                                type="text"
+                                name="task"
+                                class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                placeholder="Your Task"
+                                value="{{ $todo->task }}"
+                                required>
+                            <input
+                                type="text"
+                                name="author"
+                                class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                placeholder="Subject or Topic"
+                                value="{{ $todo->author }}"
+                                required>
+                            <input
+                                type="text"
+                                name="penerbit"
+                                class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                value="{{ $todo->penerbit }}"
+                                required>
+                            <textarea
+                                name="sinopsis"
+                                class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
+                                placeholder="Fill the description"
+                                required>{{ $todo->sinopsis }}</textarea>
+
+                            <!-- Submit and Back buttons -->
+                            <div class="flex gap-2">
+                                <button class="bg-blue-400 w-fit px-12 py-3 rounded-full text-white font-medium" type="submit">Update</button>
+                                <button type="button" class="closeEditModalBtnBottom border-2 border-slate-400 w-fit px-8 py-3 rounded-full text-blue-400 font-medium" data-id="{{ $todo->id }}">Back</button>
+                            </div>
+                        </form>
+                    </div>
+                    <img src="{{ asset('images/double-star.png') }}" alt="Logo" class="w-1/3 absolute bottom-4 z-40" />
+                </div>
+
+            </div>
+
             @endforeach
         </ul>
     </div>
@@ -124,21 +199,22 @@
                     <!-- Subject or Topic input -->
                     <input
                         type="text"
-                        name="subject"
+                        name="author"
                         class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         placeholder="Subject or Topic"
                         required>
 
                     <!-- Due Date input -->
                     <input
-                        type="date"
-                        name="due_date"
+                        type="text"
+                        placeholder="Deadline Task"
+                        name="penerbit"
                         class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         required>
 
                     <!-- Description input (textarea) -->
                     <textarea
-                        name="description"
+                        name="sinopsis"
                         class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         placeholder="Fill the description"
                         required></textarea>
@@ -153,6 +229,9 @@
             <img src="{{ asset('images/double-star.png') }}" alt="Logo" class="w-1/3 absolute bottom-4 z-40" />
         </div>
     </div>
+
+
+
 
     <!-- JavaScript to toggle the modal -->
     <script>
@@ -179,19 +258,45 @@
 
         // Dropdown functionality
         document.querySelectorAll('[id^="dropdownButton-"]').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(event) {
                 const dropdownMenu = document.getElementById('dropdownMenu-' + this.id.split('-')[1]);
                 dropdownMenu.classList.toggle('hidden');
+                // Menghentikan event bubbling agar klik pada dropdown tidak menutupnya
+                event.stopPropagation();
             });
         });
 
         // Close dropdown when clicking outside
         window.addEventListener('click', function(event) {
-            if (!event.target.closest('.relative')) {
-                document.querySelectorAll('[id^="dropdownMenu-"]').forEach(menu => {
-                    menu.classList.add('hidden');
-                });
+            // Sembunyikan semua dropdown menu yang terlihat
+            document.querySelectorAll('[id^="dropdownMenu-"]:not(.hidden)').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+        });
+
+        // Function to open the specific modal for each task
+        // Event listener untuk membuka modal edit berdasarkan ID task yang di-klik
+        function openEditModal(taskId) {
+            console.log("Opening modal for taskId:", taskId);
+            const editModal = document.getElementById('editTaskModal-' + taskId);
+            if (editModal) {
+                editModal.classList.remove('hidden');
+                editModal.setAttribute('aria-hidden', 'false');
+            } else {
+                console.error('Modal with ID editTaskModal-' + taskId + ' not found.');
             }
+        }
+
+
+
+        // Event listener untuk menutup modal edit
+        document.querySelectorAll('.closeEditModalBtn, .closeEditModalBtnBottom').forEach(button => {
+            button.addEventListener('click', function(event) {
+                const taskId = this.getAttribute('data-id');
+                const editModal = document.getElementById('editTaskModal-' + taskId);
+                editModal.classList.add('hidden');
+                editModal.setAttribute('aria-hidden', 'true');
+            });
         });
     </script>
     <img src="{{ asset('images/bintang.png') }}" alt="Logo" class="w-1/4 absolute -left-32 bottom-11 -z-30" />
