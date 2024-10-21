@@ -12,16 +12,47 @@ class TodoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $todos = Todo::all();
+        $statusFilter = $request->input('status');
+        $startDate = $request->input('startDate');
+        $search = $request->input('search');
+        $endDate = $request->input('endDate');
 
+        $query = Todo::query();
+
+        // Filter berdasarkan status (done atau not_done)
+        if ($statusFilter === 'done') {
+            $query->where('is_done', true);
+        } elseif ($statusFilter === 'not_done') {
+            $query->where('is_done', false);
+        }
+
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('task', 'like', "%{$search}%")
+                    ->orWhere('sinopsis', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter berdasarkan rentang tanggal
+        if ($startDate && $endDate) {
+            $query->whereBetween('penerbit', [$startDate, $endDate]);
+        }
+
+
+
+        // Ambil semua todos sesuai dengan filter yang diterapkan
+        $todos = $query->get();
+
+        // Pisahkan data menjadi pinned dan regular
         $pinnedTodos = $todos->where('is_pinned', true);
         $regularTodos = $todos->where('is_pinned', false);
 
-        // Kembalikan view dengan data yang sudah dipisah
+        // Kembalikan view dengan data yang sudah dipisahkan
         return view("todo", compact('pinnedTodos', 'regularTodos', 'todos'));
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -143,5 +174,33 @@ class TodoController extends Controller
         }
 
         return redirect()->back()->with('success', 'Task marked as done successfully!');
+    }
+
+    public function filter(Request $request)
+    {
+        $startDate = $request->input('startDate');
+        $endDate = $request->input('endDate');
+
+        // Pastikan menggunakan kolom yang berisi data tanggal
+        $todos = Todo::whereBetween('penerbit', [$startDate, $endDate])->get();
+
+        // Pisahkan data menjadi pinned dan regular
+        $pinnedTodos = $todos->where('is_pinned', true);
+        $regularTodos = $todos->where('is_pinned', false);
+
+        // Kembalikan view dengan data yang sudah dipisahkan
+        return view('todo', compact('pinnedTodos', 'regularTodos', 'todos'));
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        // Cari task dan sinopsis yang cocok
+        $todos = Todo::where('task', 'like', "%{$query}%")
+            ->orWhere('sinopsis', 'like', "%{$query}%")
+            ->get(['id', 'task', 'sinopsis']); // Ambil hanya kolom yang dibutuhkan
+
+        return response()->json($todos);
     }
 }

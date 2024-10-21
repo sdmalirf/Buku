@@ -19,6 +19,8 @@ Route::redirect('/', '/todo');
 Route::post('/todo/{id}/pin', [TodoController::class, 'pin'])->name('todo.pin');
 Route::post('/todo/{id}/unpin', [TodoController::class, 'unpin'])->name('todo.unpin');
 Route::post('/todo/{id}/done', [TodoController::class, 'markAsDone'])->name('todo.done');
+Route::get('/todo/filter', [TodoController::class, 'filter']);
+Route::get('/todo/search', [TodoController::class, 'search']);
 Route::resource('todo', TodoController::class);
 
 
