@@ -16,13 +16,11 @@ return new class extends Migration
         Schema::create('todos', function (Blueprint $table) {
             $table->id();
             $table->string('task');
-            $table->string('author');
-            $table->string('penerbit');
-            $table->mediumText('sinopsis');
+            $table->string('matkul');
+            $table->string('deadline');
+            $table->mediumText('deskripsi');
             $table->timestamps();
         });
-
-
     }
 
     /**

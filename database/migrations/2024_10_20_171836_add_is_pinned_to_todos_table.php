@@ -13,11 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('todos', function (Blueprint $table) {
-            $table->boolean('is_pinned')->default(false); // Menambahkan kolom is_pinned
+        Schema::create('information', function (Blueprint $table) {
+            // Menggunakan 'todo_id' sebagai primary key dan foreign key
+            $table->foreignId('todo_id')->constrained('todos')->onDelete('cascade')->primary();
+            $table->boolean('is_pinned')->default(false);
+            $table->timestamps();
         });
     }
-
 
     /**
      * Reverse the migrations.
@@ -26,8 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('todos', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('information');
     }
 };

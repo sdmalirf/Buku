@@ -13,14 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('todos', function (Blueprint $table) {
+        Schema::table('information', function (Blueprint $table) {
             $table->boolean('is_done')->default(false);
         });
     }
 
     public function down()
     {
-        Schema::table('todos', function (Blueprint $table) {
+        Schema::table('information', function (Blueprint $table) {
             $table->dropColumn('is_done');
         });
     }

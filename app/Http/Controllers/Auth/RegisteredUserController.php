@@ -3,39 +3,49 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Providers\RouteServiceProvider;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
+use Illuminate\View\View;
 
-class AuthenticatedSessionController extends Controller
+class RegisteredUserController extends Controller
 {
-    public function create()
+    /**
+     * Display the registration view.
+     */
+    public function create(): View
     {
-        return view('auth.login'); // Ganti dengan path view login Anda
+        return view('auth.register');
     }
 
-    public function store(Request $request)
+    /**
+     * Handle an incoming registration request.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function store(Request $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return redirect()->intended('dashboard'); // Ganti dengan halaman tujuan setelah login
-        }
-
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
         ]);
-    }
 
-    public function destroy(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        event(new Registered($user));
 
-        return redirect('/'); // Ganti dengan halaman tujuan setelah logout
+        Auth::login($user);
+
+        return redirect('/todo');
     }
 }

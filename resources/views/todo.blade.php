@@ -55,6 +55,16 @@
 
 
 <section class="w-full h-full overflow-x-hidden relative">
+    <form method="POST" action="{{ route('logout') }}" class="w-2/3 flex justify-end items-end mx-auto">
+        @csrf
+        <x-dropdown-link :href="route('logout')"
+            onclick="event.preventDefault();
+        this.closest('form').submit();"
+            class="focus:bg-red-500 focus:text-white hover:text-black font-semibold text-lg flex justify-center items-center text-center py-4 bg-blue-500 text-white border-2 w-fit px-6 my-4 rounded-full hover:bg-blue-600">
+            {{ __('Log Out') }}
+        </x-dropdown-link>
+    </form>
+
     <div class="w-2/3 mx-auto flex flex-col gap-6 mt-12">
         <span class="flex flex-col gap-2">
             <h1 class="font-bold text-5xl">To Do List</h1>
@@ -107,17 +117,15 @@
                             Reset
                         </a>
                         <a href="{{ request()->fullUrlWithQuery(['status' => 'done']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            role="menuitem">
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request('status') === 'done' ? 'bg-gray-200' : '' }}" role="menuitem">
                             Tugas Selesai
                         </a>
 
-                        <!-- Filter by Not Done Tasks -->
                         <a href="{{ request()->fullUrlWithQuery(['status' => 'not_done']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            role="menuitem">
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request('status') === 'not_done' ? 'bg-gray-200' : '' }}" role="menuitem">
                             Tugas Belum Selesai
                         </a>
+
 
                         <!-- Reset Filter -->
 
@@ -182,11 +190,12 @@
                         <img src="{{ asset('images/pinned.png') }}" alt="Options" class="w-full ">
                         Pinned
                     </div>
-                    @if ($todo->is_done)
+                    @if ($todo->information && $todo->information->is_done)
                     <div class="text-green-500 font-semibold">
                         Done
                     </div>
                     @else
+                    {{-- Optional else block for not done --}}
                     @endif
                 </div>
                 <div class="flex flex-col gap-1">
@@ -203,13 +212,13 @@
                                     onclick="openEditModal('{{ $todo->id }}')">
                                     Edit
                                 </a>
-                                @if ($todo->is_pinned)
-                                <form action="{{ route('todo.unpin', $todo->id) }}" method="POST" class="">
+                                @if ($todo->information && $todo->information->is_pinned)
+                                <form action="{{ route('todo.unpin', $todo->id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Unpin</button>
                                 </form>
                                 @else
-                                <form action="{{ route('todo.pin', $todo->id) }}" method="POST" class="">
+                                <form action="{{ route('todo.pin', $todo->id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pin</button>
                                 </form>
@@ -218,14 +227,15 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2 font-medium text-slate-600">
-                        <p>{{ $todo->author }}</p>
+                        <p>{{ $todo->matkul }}</p>
                         <span class="w-1 h-1 rounded-full bg-slate-400"></span>
-                        <p>{{ \Carbon\Carbon::parse($todo->penerbit)->locale('id')->isoFormat('D MMMM YYYY') }}</p>
+                        <p>{{ \Carbon\Carbon::parse($todo->deadline)->locale('id')->isoFormat('D MMMM YYYY') }}</p>
                     </div>
-                    <p class="mt-2">{{ $todo->sinopsis }}</p>
+                    <p class="mt-2">{{ $todo->deskripsi }}</p>
                 </div>
                 <div class="flex gap-3">
-                    @if ($todo->is_done)
+                    @if ($todo->information && $todo->information->is_done)
+                    {{-- Optional block for done tasks --}}
                     @else
                     <form action="{{ route('todo.done', $todo->id) }}" method="POST">
                         @csrf
@@ -247,8 +257,6 @@
             <div id="editTaskModal-{{ $todo->id }}" class="w-full hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50" aria-hidden="true">
                 <!-- Modal content for editing -->
                 <div class="bg-white rounded-xl w-3/4 px-12 py-8 relative">
-
-
                     <div class="w-full justify-between flex">
                         <div class="flex flex-col gap-2">
                             <h2 class="text-4xl font-bold">Edit Task?</h2>
@@ -268,22 +276,22 @@
                                 required>
                             <input
                                 type="text"
-                                name="author"
+                                name="matkul"
                                 class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                                 placeholder="Subject or Topic"
-                                value="{{ $todo->author }}"
+                                value="{{ $todo->matkul }}"
                                 required>
                             <input
                                 type="date"
-                                name="penerbit"
+                                name="deadline"
                                 class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
-                                value="{{ $todo->penerbit }}"
+                                value="{{ $todo->deadline }}"
                                 required>
                             <textarea
-                                name="sinopsis"
+                                name="deskripsi"
                                 class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                                 placeholder="Fill the description"
-                                required>{{ $todo->sinopsis }}</textarea>
+                                required>{{ $todo->deskripsi }}</textarea>
 
                             <!-- Submit and Back buttons -->
                             <div class="flex gap-2">
@@ -297,10 +305,11 @@
             </div>
             @endforeach
 
+
             @foreach ($regularTodos as $todo)
             <li class="p-6 shadow-md w-full rounded-xl border-l-8 bg-white border-blue-500 flex flex-col gap-6 ">
                 <div class="flex gap-3 items-center">
-                    @if ($todo->is_done)
+                    @if ($todo->information && $todo->information->is_done)
                     <div class="text-green-500 font-semibold">
                         Done
                     </div>
@@ -321,7 +330,8 @@
                                     onclick="openEditModal('{{ $todo->id }}')">
                                     Edit
                                 </a>
-                                @if ($todo->is_pinned)
+                                @if ($todo->information && $todo->information->is_pinned)
+
                                 <form action="{{ route('todo.unpin', $todo->id) }}" method="POST" class="">
                                     @csrf
                                     <button type="submit" class="w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Unpin</button>
@@ -336,15 +346,15 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2 font-medium text-slate-600">
-                        <p>{{ $todo->author }}</p>
+                        <p>{{ $todo->matkul }}</p>
                         <span class="w-1 h-1 rounded-full bg-slate-400"></span>
-                        <p>{{ \Carbon\Carbon::parse($todo->penerbit)->locale('id')->isoFormat('D MMMM YYYY') }}</p>
+                        <p>{{ \Carbon\Carbon::parse($todo->deadline)->locale('id')->isoFormat('D MMMM YYYY') }}</p>
 
                     </div>
-                    <p class="mt-2">{{ $todo->sinopsis }}</p>
+                    <p class="mt-2">{{ $todo->deskripsi }}</p>
                 </div>
                 <div class="flex gap-3">
-                    @if ($todo->is_done)
+                    @if ($todo->information && $todo->information->is_done)
                     @else
                     <form action="{{ route('todo.done', $todo->id) }}" method="POST">
                         @csrf
@@ -387,22 +397,22 @@
                                 required>
                             <input
                                 type="text"
-                                name="author"
+                                name="matkul"
                                 class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                                 placeholder="Subject or Topic"
-                                value="{{ $todo->author }}"
+                                value="{{ $todo->matkul }}"
                                 required>
                             <input
                                 type="date"
-                                name="penerbit"
+                                name="deadline"
                                 class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
-                                value="{{ $todo->penerbit }}"
+                                value="{{ $todo->deadline }}"
                                 required>
                             <textarea
-                                name="sinopsis"
+                                name="deskripsi"
                                 class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                                 placeholder="Fill the description"
-                                required>{{ $todo->sinopsis }}</textarea>
+                                required>{{ $todo->deskripsi }}</textarea>
 
                             <!-- Submit and Back buttons -->
                             <div class="flex gap-2">
@@ -447,7 +457,7 @@
 
                     <input
                         type="text"
-                        name="author"
+                        name="matkul"
                         class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         placeholder="Subject or Topic"
                         required>
@@ -455,12 +465,12 @@
                     <input
                         type="date"
                         placeholder="Deadline Task"
-                        name="penerbit"
+                        name="deadline"
                         class="w-full px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         required>
 
                     <textarea
-                        name="sinopsis"
+                        name="deskripsi"
                         class="w-full h-56 px-4 py-4 rounded-xl border-gray-400 focus:border-gray-500 focus:outline-none border-2"
                         placeholder="Fill the description"
                         required></textarea>
@@ -629,7 +639,7 @@
                         resultsContainer.innerHTML = '<div>No results found</div>';
                     } else {
                         resultsContainer.innerHTML = data.map(item =>
-                            `<div onclick="selectResult('${item.id}')">${item.task} - ${item.sinopsis}</div>`
+                            `<div onclick="selectResult('${item.id}')">${item.task} - ${item.deskripsi}</div>`
                         ).join('');
                     }
                     resultsContainer.classList.remove('hidden');
