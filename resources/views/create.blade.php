@@ -41,8 +41,8 @@
                 <input type="text" name="author" class="form-control" placeholder="Add your task"><br>
                 <label for="">Penerbit</label><br>
                 <input type="text" name="penerbit" class="form-control" placeholder="Add your task"><br>
-                <label for="">Sinopsis</label><br>
-                <input type="text" name="sinopsis" class="form-control" placeholder="Add your task"><br>
+                <label for="">deskripsi</label><br>
+                <input type="text" name="deskripsi" class="form-control" placeholder="Add your task"><br>
                 <button class="btn btn-outline-secondarty" type="submit">Add</button>
         </form>
     </div>

@@ -9,5 +9,11 @@ class Todo extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['task', 'author', 'penerbit', 'sinopsis'];
+    protected $fillable = ['task', 'matkul', 'deadline', 'deskripsi'];
+
+    // Define the relationship to the Information model
+    public function information()
+    {
+        return $this->hasOne(Information::class);
+    }
 }

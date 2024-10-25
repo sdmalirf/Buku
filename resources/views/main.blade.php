@@ -10,7 +10,6 @@
 </head>
 
 <body>
-
     <div class="w-screen h-screen overflow-x-hidden">
         @yield('container')
     </div>
